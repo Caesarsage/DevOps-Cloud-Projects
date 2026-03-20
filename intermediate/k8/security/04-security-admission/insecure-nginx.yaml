@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-insecure
+  namespace: staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-insecure
+  template:
+    metadata:
+      labels:
+        app: nginx-insecure
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.25-alpine

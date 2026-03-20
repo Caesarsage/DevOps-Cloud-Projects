@@ -1,0 +1,14 @@
+# rolebinding-ci.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ci-reader-binding
+  namespace: staging
+subjects:
+  - kind: ServiceAccount
+    name: ci-pipeline       # the service account name
+    namespace: staging      # the namespace the SA lives in
+roleRef:
+  kind: Role
+  name: ci-reader           # must match the Role name exactly
+  apiGroup: rbac.authorization.k8s.io

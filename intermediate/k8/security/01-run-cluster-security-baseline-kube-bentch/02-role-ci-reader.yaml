@@ -1,0 +1,10 @@
+# role-ci-reader.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ci-reader
+  namespace: staging
+rules:
+  - apiGroups: [""]          # "" = the core API group (Pods, Services, Secrets, ConfigMaps)
+    resources: ["pods", "configmaps"]
+    verbs: ["get", "list", "watch"]

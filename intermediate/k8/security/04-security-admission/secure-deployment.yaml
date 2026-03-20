@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secure-app
+  namespace: staging
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: secure-app
+  template:
+    metadata:
+      labels:
+        app: secure-app
+    spec:
+      securityContext:
+        runAsNonRoot: true         # container must run as a non-root user
+        runAsUser: 10001           # explicit UID — don't rely on the image's default
+        runAsGroup: 10001          # explicit GID
+        fsGroup: 10001             # volumes are owned by this group
+        seccompProfile:
+          type: RuntimeDefault     # use the container runtime's default seccomp profile
+      automountServiceAccountToken: false
+      containers:
+        - name: app
+          image: nginx:1.25-alpine
+          securityContext:
+            allowPrivilegeEscalation: false   # block setuid and sudo inside the container
+            readOnlyRootFilesystem: true      # the single highest-impact setting
+            capabilities:
+              drop:
+                - ALL                         # drop every Linux capability
+              add: []                         # add back only what is explicitly needed
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: nginx-cache
+              mountPath: /var/cache/nginx
+            - name: nginx-run
+              mountPath: /var/run
+      volumes:
+        # nginx needs writable directories — provide them as emptyDir volumes
+        - name: tmp
+          emptyDir: {}
+        - name: nginx-cache
+          emptyDir: {}
+        - name: nginx-run
+          emptyDir: {}
