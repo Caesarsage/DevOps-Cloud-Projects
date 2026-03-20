@@ -1,0 +1,19 @@
+# custom-rules.yaml
+customRules:
+  custom-rules.yaml: |-
+    - rule: Suspicious network tool in container
+      desc: >
+        Detects execution of curl or wget inside a running container.
+        These tools are commonly used for data exfiltration, downloading
+        attacker payloads, or reaching command-and-control servers.
+        Production containers should not be making ad-hoc HTTP requests.
+      condition: >
+        spawned_process
+        and container
+        and proc.name in (curl, wget)
+      output: >
+        Network tool executed in container
+        (user=%user.name tool=%proc.name cmd=%proc.cmdline
+         pod=%k8s.pod.name ns=%k8s.ns.name image=%container.image)
+      priority: WARNING
+      tags: [network, exfiltration, custom]
