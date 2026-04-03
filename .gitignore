@@ -135,6 +135,9 @@ known_hosts
 *.cer
 *.p12
 *.pfx
+*.csr
+*.pem
+*.srl
 
 # Backup files
 *.backup
