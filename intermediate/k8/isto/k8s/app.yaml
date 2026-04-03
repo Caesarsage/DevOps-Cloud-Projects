@@ -1,0 +1,110 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: webapp-cfg-v1
+  labels:
+    version: v1
+data:
+  message: "CloudAcademy.v1.0.0"
+  bgcolor: "yellow"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: webapp-cfg-v2
+  labels:
+    version: v2
+data:
+  message: "CloudAcademy.v2.0.0"
+  bgcolor: "cyan"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-v1
+  labels:
+    role: frontend
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      role: frontend
+      version: v1
+  template:
+    metadata:
+      labels:
+        role: frontend
+        version: v1
+    spec:
+      containers:
+      - name: webapp
+        image: cloudacademydevops/webappecho:latest
+        imagePullPolicy: IfNotPresent
+        command: ["/go/bin/demo"]
+        ports:
+        - containerPort: 80
+        env:
+        - name: MESSAGE
+          valueFrom:
+            configMapKeyRef:
+              name: webapp-cfg-v1
+              key: message
+        - name: BACKGROUND_COLOR
+          valueFrom:
+            configMapKeyRef:
+              name: webapp-cfg-v1
+              key: bgcolor
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-v2
+  labels:
+    role: frontend
+    version: v2
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      role: frontend
+      version: v2
+  template:
+    metadata:
+      labels:
+        role: frontend
+        version: v2
+    spec:
+      containers:
+      - name: webapp
+        image: cloudacademydevops/webappecho:latest
+        imagePullPolicy: IfNotPresent
+        command: ["/go/bin/demo"]
+        ports:
+        - containerPort: 80
+        env:
+        - name: MESSAGE
+          valueFrom:
+            configMapKeyRef:
+              name: webapp-cfg-v2
+              key: message
+        - name: BACKGROUND_COLOR
+          valueFrom:
+            configMapKeyRef:
+              name: webapp-cfg-v2
+              key: bgcolor
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  labels:
+    role: frontend
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    role: frontend
