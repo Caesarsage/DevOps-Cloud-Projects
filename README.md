@@ -109,7 +109,7 @@ ls advanced/      # Expert-level projects
 | [LEMP Stack](./beginner/linux/lemp-stack/README.md) | Deploy Linux, Nginx, MySQL, PHP stack | `Linux` `Nginx` `MySQL` `PHP` |
 | [MERN Stack](./beginner/linux/mern-stack/README.md) | Full-stack JavaScript application | `MongoDB` `Express` `React` `Node.js` |
 | [MEAN Stack](./beginner/linux/mean-stack/README.md) | Angular-based full-stack app | `MongoDB` `Express` `Angular` `Node.js` |
-| [Client-Server MySQL](./beginner/linux/project-05-wordpress-client-server-DBMS/README.md) | Database architecture patterns | `MySQL` `Linux` `Networking` |
+| [Client-Server MySQL](./beginner/linux/wordpress-client-server-DBMS/README.md) | Database architecture patterns | `MySQL` `Linux` `Networking` |
 | [WordPress Solution](./beginner/linux/wordpress/) | Complete WordPress deployment | `WordPress` `MySQL` `Linux` |
 | [CI/CD with GitHub Actions](./beginner/linux/cicd-pipeline/README.md) | Automated deployment pipeline | `GitHub Actions` `Node.js` `CI/CD` |
 
@@ -118,13 +118,15 @@ ls advanced/      # Expert-level projects
 | Project | Description | Technologies |
 |---------|-------------|--------------|
 | [Flask with Docker](./beginner/docker/flask-docker/README.md) | Containerize Python Flask app | `Docker` `Docker Compose` `Python` `Flask` |
+| [Container Runtime](./beginner/docker/container-runtime/README.md) | Understand container runtime internals | `Docker` `Containers` `Linux` |
+| [Docker Build Patterns](./beginner/docker/docker-build-architecture-examples/README.md) | 8 Docker build architecture examples | `Docker` `Multi-stage` `BuildKit` `Caching` |
 
 ### 🏗️ Infrastructure as Code
 
 | Project | Description | Technologies |
 |---------|-------------|--------------|
 | [Terraform Basics](./beginner/terraform/basic-server-provision-terraform/README.md) | Provision cloud infrastructure | `Terraform` `AWS/Azure` `IaC` |
-| [Ansible Configuration](./beginner/basic-server-config-ansible/ansible/README.md) | Server configuration management | `Ansible` `YAML` `Automation` |
+<!-- TODO: Ansible beginner project (beginner/basic-server-config-ansible/) not found in repo - add when available -->
 
 ### 📜 Scripting
 
@@ -153,6 +155,8 @@ ls advanced/      # Expert-level projects
 | [WordPress with Helm](intermediate/k8/helm/wordpress-deployment-with-helm/README.md) | Deploy WordPress using Helm charts | `Helm` `Kubernetes` `WordPress` |
 | [GitOps with K8s](./intermediate/k8/gitops/gitops-k8s-helm/README.md) | Git-based Kubernetes deployments | `GitOps` `Flux/ArgoCD` `Kubernetes` |
 | [K8s Networking Lab](./intermediate/k8/networking-concepts-practice/README.md) | Network policies & service mesh | `Kubernetes` `Networking` `CNI` |
+| [Canary Deployments](./intermediate/k8/deploy-canary-release/README.md) | Canary release with traffic splitting & monitoring | `Kubernetes` `Canary` `Traffic Management` |
+| [Istio Service Mesh](./intermediate/k8/isto/) | Service mesh with Istio traffic routing | `Kubernetes` `Istio` `Service Mesh` |
 | [🆕 Multi-Tier App](./intermediate/k8/multi-tier-app/README.md) | **Complete 3-tier app on K8s** | `Kubernetes` `React` `Node.js` `PostgreSQL` `Redis` |
 
 ### 🔐 Security & CI/CD
@@ -162,11 +166,23 @@ ls advanced/      # Expert-level projects
 | [CI Pipeline for Tooling](./intermediate/security/ci-tooling/README.md) | Continuous integration setup | `Jenkins` `CI/CD` `Testing` |
 | [Security Pipeline](./intermediate/security/ci-security-pipeline/README.md) | CI with security scanning | `Jenkins` `SonarQube` `Artifactory` |
 
+### 🔐 Kubernetes Security
+
+| Project | Description | Technologies |
+|---------|-------------|--------------|
+| [X.509 Client Cert Auth](./intermediate/k8/security/authentication/x509-client-cert/README.md) | Kubernetes authentication with X.509 certificates | `Kubernetes` `X.509` `TLS` `Authentication` |
+| [OIDC Authentication](./intermediate/k8/security/authentication/odic/README.md) | OpenID Connect authentication for K8s | `Kubernetes` `OIDC` `Authentication` |
+| [RBAC Baseline with kube-bench](./intermediate/k8/security/rbac/01-run-cluster-security-baseline-kube-bentch/) | Cluster security baseline scanning | `Kubernetes` `kube-bench` `CIS Benchmark` |
+| [CI RBAC](./intermediate/k8/security/rbac/02-ci-rbac/README.md) | RBAC for CI service accounts | `Kubernetes` `RBAC` `CI/CD` |
+| [RBAC Auditing](./intermediate/k8/security/rbac/03-audit-rbac-rakkess-rbac-lookup/README.md) | Audit RBAC with rakkess & rbac-lookup | `Kubernetes` `RBAC` `Security Auditing` |
+| [Security Admission](./intermediate/k8/security/rbac/04-security-admission/README.md) | Pod security admission policies | `Kubernetes` `Admission Controllers` `Security` |
+| [Falco Runtime Security](./intermediate/k8/security/rbac/05-falco/README.md) | Runtime threat detection with Falco | `Kubernetes` `Falco` `Runtime Security` |
+
 ### 🤖 Ansible Automation
 
 | Project | Description | Technologies |
 |---------|-------------|--------------|
-| [Ansible Configuration](./intermediate/ansible/nsible-automation/README.md) | Configuration management basics | `Ansible` `YAML` `Automation` |
+| [Ansible Configuration](./intermediate/ansible/ansible-automation/README.md) | Configuration management basics | `Ansible` `YAML` `Automation` |
 | [Ansible Refactoring](./intermediate/ansible/ansible-refactor/README.md) | Static assignments & roles | `Ansible` `Roles` `Best Practices` |
 | [Ansible Dynamic](./intermediate/ansible/ansible-dynamic/README.md) | Dynamic inventory & assignments | `Ansible` `Dynamic Inventory` |
 
@@ -238,7 +254,7 @@ graph TD
 
 ### Upcoming Projects 🔮
 
-- [ ] Service Mesh with Istio
+- [x] Service Mesh with Istio
 - [ ] Observability Stack (Prometheus + Grafana + Loki)
 - [ ] Multi-cluster Kubernetes Federation
 - [ ] Chaos Engineering with LitmusChaos
