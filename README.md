@@ -170,8 +170,8 @@ ls advanced/      # Expert-level projects
 
 | Project | Description | Technologies |
 |---------|-------------|--------------|
-| [X.509 Client Cert Auth](./intermediate/k8/security/authentication/x509-client-cert/README.md) | Kubernetes authentication with X.509 certificates | `Kubernetes` `X.509` `TLS` `Authentication` |
-| [OIDC Authentication](./intermediate/k8/security/authentication/odic/README.md) | OpenID Connect authentication for K8s | `Kubernetes` `OIDC` `Authentication` |
+| [X.509 Client Cert Auth](./intermediate/k8/security/authentication/x509-client-cert/README.md) | Generate user certs, sign with cluster CA, bind to RBAC | `Kubernetes` `X.509` `TLS` `Authentication` |
+| [OIDC with Dex & kubelogin](./intermediate/k8/security/authentication/odic/README.md) | Browser-based login with Dex, JWT tokens, and group-to-RBAC mapping | `Kubernetes` `OIDC` `Dex` `kubelogin` |
 | [RBAC Baseline with kube-bench](./intermediate/k8/security/rbac/01-run-cluster-security-baseline-kube-bentch/) | Cluster security baseline scanning | `Kubernetes` `kube-bench` `CIS Benchmark` |
 | [CI RBAC](./intermediate/k8/security/rbac/02-ci-rbac/README.md) | RBAC for CI service accounts | `Kubernetes` `RBAC` `CI/CD` |
 | [RBAC Auditing](./intermediate/k8/security/rbac/03-audit-rbac-rakkess-rbac-lookup/README.md) | Audit RBAC with rakkess & rbac-lookup | `Kubernetes` `RBAC` `Security Auditing` |

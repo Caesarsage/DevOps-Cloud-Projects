@@ -2,6 +2,8 @@
 
 You'll generate a user certificate signed by the cluster CA, bind it to an RBAC role, and use it to authenticate to the cluster as a different user.
 
+> **This guide is for local development and learning only.** Manually signing certificates with the cluster CA and storing keys on disk is done here for simplicity. In production, use the Kubernetes CertificateSigningRequest API or cert-manager for certificate issuance, enforce short-lived certificates with automatic rotation, and store private keys in a secrets manager (HashiCorp Vault, AWS Secrets Manager) or hardware security module (HSM) — never distribute the cluster CA key.
+
 ### Step 1: Copy the CA cert and key from the kind control plane
 
 ```bash

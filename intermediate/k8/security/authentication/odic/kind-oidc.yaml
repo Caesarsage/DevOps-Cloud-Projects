@@ -1,0 +1,32 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 32000
+        hostPort: 32000
+        protocol: TCP
+    extraMounts:
+      - hostPath: ./dex-ca.crt
+        containerPath: /etc/ca-certificates/dex-ca.crt
+        readOnly: true
+      - hostPath: ./auth-config.yaml
+        containerPath: /etc/kubernetes/auth-config.yaml
+        readOnly: true
+    kubeadmConfigPatches:
+      - |
+        kind: ClusterConfiguration
+        apiServer:
+          extraArgs:
+            authentication-config: /etc/kubernetes/auth-config.yaml
+          extraVolumes:
+            - name: dex-ca
+              hostPath: /etc/ca-certificates/dex-ca.crt
+              mountPath: /etc/ca-certificates/dex-ca.crt
+              readOnly: true
+              pathType: File
+            - name: auth-config
+              hostPath: /etc/kubernetes/auth-config.yaml
+              mountPath: /etc/kubernetes/auth-config.yaml
+              readOnly: true
+              pathType: File

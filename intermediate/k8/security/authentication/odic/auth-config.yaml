@@ -1,0 +1,44 @@
+apiVersion: apiserver.config.k8s.io/v1beta1
+kind: AuthenticationConfiguration
+jwt:
+  - issuer:
+      url: https://dex.127.0.0.1.nip.io:32000
+      audiences:
+        - kubernetes
+      certificateAuthority: |
+        -----BEGIN CERTIFICATE-----
+        MIIFAzCCAuugAwIBAgIUEREaxgkv5QfHZn0jos5PdlwuzeMwDQYJKoZIhvcNAQEL
+        BQAwETEPMA0GA1UEAwwGZGV4LWNhMB4XDTI2MDQwMzEyMzYxM1oXDTI3MDQwMzEy
+        MzYxM1owETEPMA0GA1UEAwwGZGV4LWNhMIICIjANBgkqhkiG9w0BAQEFAAOCAg8A
+        MIICCgKCAgEAzAhKvMBL6r+QfvWsqNauqsAzGK7LMzMUPBaLXsnDUImK+s7FkJv8
+        VE514JHeNvVuw+iVxB9c9WYag/+U34axRHDIyXM2NMnZ8W3mdWoH6JVHun3DPYxg
+        UVOdtvHI3M8Jm7Vpm3PNOFv+8a+XdULV7qmlawL+vFdbRb6TmGv+PUHDs8f84D3Z
+        hoD/OIVQxrgk6q02hkmmmWUeWJSeqabacGvqmNGWuwCPSGEvwpqgglM47tXUfD6z
+        6lmxOqU+kEaWwIWmCGrP+IvITiIgwppLVvb1yy1QjUzkc3SWxWZSHLxS5In3YYGt
+        WSzi7wkp3zfMqE3ar1XXCV48UHyNy+OW87RYGX9a4dCWGlb+vRvUI9KaaOy3p8bX
+        ajKW3Q51PNA1CL2uvXctvAbo2oVWM+mrnQA5dTLIXVEBke/pDJ0RLfflom42wCKp
+        lhybePEshTTMiQvOJMcC20daAF5mV1bwmkLPlMzBtHBs0NTv3FygS2mRiU4Yq7KG
+        VjCmZ8A1XfcQh+6uDEImhPfHqMtC9oOAY5ebGMpRt2G7zbq3VQyMn3b2lC4QhWns
+        1onXeIN/TK3IexqW+9p2/XTqrBCLUt8/2WNL5+AbCFOyK/AXpGgLGrvMl45byIVJ
+        QLoW87+0WgYpVucTmUa1Bvr03aS/6JcYbE34VlMPjN+QBksVsxm6Ze8CAwEAAaNT
+        MFEwHQYDVR0OBBYEFBMZFESscGK2NRAzZChPoAc1fym0MB8GA1UdIwQYMBaAFBMZ
+        FESscGK2NRAzZChPoAc1fym0MA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQEL
+        BQADggIBADv3wC7DCeYkC2qfxQ/3HKxj/QBqokqlG7B5d+UMaw+gpszfYlXLjgVs
+        bwEoI9HDusp31sUqrJMIEumvbbf6U24iU2Vsk0HfM+lTz9f/Geey+vnSOheiS9f7
+        YTQbsyYrwRlHFVChe5Nihvz423HapfdRkE4gpwQ8IApZc2wmioKBWBCbqbM6+02v
+        59VwDRUGwgCfsHd3oA+cCyUbIa0kpo3IxOs6ZeguYrr3FxqNIjt3JWolZ7Ri3a8O
+        qpIUeXzsvKpnLeIV/LnNpOMuSSD1hs660ENfMKwPzZIbUvHjwujaiRmi977A9FEQ
+        qyjBkzlOBeMV4/FS/s7FWukZfuRDWMQfHlw8NinhFw3OnLUlJqPMVFrM/GSPyBf4
+        ipW9UX7AIe8kfzxQKVmJKOj/jbtzE08J0h5olHDyHmPma8tYa+RnKhf51Jj2hkdg
+        LhmdceS+r50n1vz2Rhhotr8MyC/3h2rF+mWCkQJqpSCAqBCHROjkKyprTszkeU9S
+        0ewzS124nYg98vhw/EeHQfwkEtReVUHrUAsEvdI76AxzlSxpuAFVbfTnU9Nfc7VH
+        PvDNJ3cfDGa89PpMcXe4ugQmRIjbriGGV/jMKFIpSUy+QGanQPJriQiuLCD0bET3
+        42rJXPT2zM03egwbaYdibue/9D8rR8bAk2nrbZ8mn/czkmG568Zm
+        -----END CERTIFICATE-----
+    claimMappings:
+      username:
+        claim: email
+        prefix: ""
+      groups:
+        claim: groups
+        prefix: ""
