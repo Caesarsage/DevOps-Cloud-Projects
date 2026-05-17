@@ -172,6 +172,7 @@ ls advanced/      # Expert-level projects
 |---------|-------------|--------------|
 | [X.509 Client Cert Auth](./intermediate/k8/security/authentication/x509-client-cert/README.md) | Generate user certs, sign with cluster CA, bind to RBAC | `Kubernetes` `X.509` `TLS` `Authentication` |
 | [OIDC with Dex & kubelogin](./intermediate/k8/security/authentication/odic/README.md) | Browser-based login with Dex, JWT tokens, and group-to-RBAC mapping | `Kubernetes` `OIDC` `Dex` `kubelogin` |
+| [Encrypt Traffic with cert-manager](./intermediate/k8/security/cert-manager/README.md) | Issue & rotate TLS certs with cert-manager + Pebble; internal CA for service-to-service mTLS | `Kubernetes` `cert-manager` `TLS` `Pebble` `trust-manager` |
 | [RBAC Baseline with kube-bench](./intermediate/k8/security/rbac/01-run-cluster-security-baseline-kube-bentch/) | Cluster security baseline scanning | `Kubernetes` `kube-bench` `CIS Benchmark` |
 | [CI RBAC](./intermediate/k8/security/rbac/02-ci-rbac/README.md) | RBAC for CI service accounts | `Kubernetes` `RBAC` `CI/CD` |
 | [RBAC Auditing](./intermediate/k8/security/rbac/03-audit-rbac-rakkess-rbac-lookup/README.md) | Audit RBAC with rakkess & rbac-lookup | `Kubernetes` `RBAC` `Security Auditing` |

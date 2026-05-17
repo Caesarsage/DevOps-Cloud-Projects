@@ -1,0 +1,17 @@
+# clusterissuer-pebble.yaml
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: pebble
+spec:
+  acme:
+    # Pebble's ACME directory — accessible inside the cluster
+    server: https://pebble.pebble.svc.cluster.local/dir
+    email: test@example.com
+    privateKeySecretRef:
+      name: pebble-account-key
+    caBundle: <base64-encoded pebble-ca.crt>  # Run: base64 -w0 pebble-ca.crt
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: nginx

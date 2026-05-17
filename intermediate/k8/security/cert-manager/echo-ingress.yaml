@@ -1,0 +1,25 @@
+# echo-ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: echo
+  namespace: default
+  annotations:
+    cert-manager.io/cluster-issuer: pebble
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - echo.pebble.local
+      secretName: echo-tls
+  rules:
+    - host: echo.pebble.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: echo
+                port:
+                  number: 80
