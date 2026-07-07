@@ -1,0 +1,16 @@
+# mtls-policy.yaml
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: echo-server-mtls
+  namespace: default
+spec:
+  endpointSelector:
+    matchLabels:
+      app: echo-server
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app: echo-client
+      authentication:
+        mode: required     # Require mutual TLS for this traffic

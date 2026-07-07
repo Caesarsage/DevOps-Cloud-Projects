@@ -1,0 +1,11 @@
+# unauthorized-client.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: unauthorized
+  namespace: default
+spec:
+  containers:
+    - name: client
+      image: curlimages/curl:latest
+      command: ["sleep", "infinity"]

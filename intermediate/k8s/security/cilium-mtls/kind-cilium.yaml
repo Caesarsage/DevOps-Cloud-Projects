@@ -1,0 +1,10 @@
+# kind-cilium.yaml
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+  - role: worker
+  - role: worker
+networking:
+  disableDefaultCNI: true   # Required: let Cilium be the CNI
+  kubeProxyMode: none       # Cilium replaces kube-proxy too
