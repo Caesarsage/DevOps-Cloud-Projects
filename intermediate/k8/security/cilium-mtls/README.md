@@ -1,3 +1,20 @@
+# How to Implement Zero-Trust Workload Identity in Kubernetes with SPIFFE, SPIRE, and Cilium
+
+Full Article link: 
+
+## Prerequisites
+
+*   Familiarity with Kubernetes RBAC and pod security — the [first handbook in this series](https://www.freecodecamp.org/news/how-to-secure-a-kubernetes-cluster-handbook/) covers the foundations
+
+*   Familiarity with TLS certificates and Kubernetes Secrets — the [third handbook in this series](https://www.freecodecamp.org/news/how-to-encrypt-kubernetes-traffic/) covers cert-manager and certificate concepts
+
+*   Helm 3 and the Cilium CLI installed
+
+*   A kind cluster — you'll create a fresh one with Cilium as the CNI in this article
+
+*   Patience: this is the most complex demo in the series. SPIRE has more moving parts than anything else covered so far
+
+
 ## Demo 1 — Install Cilium with SPIRE Integration
 
 You'll create a kind cluster with Cilium as the CNI and enable its built-in SPIRE integration in a single Helm command.
@@ -68,10 +85,14 @@ helm upgrade cilium cilium/cilium \
 
 A few of these flags are easy to miss but each is load-bearing:
 
-- `kubeProxyReplacement=true` — Cilium installs its eBPF-based replacement for kube-proxy. Mandatory whenever the kind config sets `kubeProxyMode: none`.
-- `k8sServiceHost` / `k8sServicePort` — direct API server address used during bootstrap, before Cilium can route the Service ClusterIP. On EKS/GKE/AKS you don't need this because kube-proxy is still present during install.
-- `authentication.enabled=true` — required alongside `authentication.mutual.spire.enabled=true`. The chart's `validate.yaml` rejects the install with `SPIRE integration requires .Values.authentication.enabled=true and .Values.authentication.mutual.spire.enabled=true` if you set only the mutual flag.
-- `dataStorage.enabled=false` — switches the SPIRE server from a PVC-backed datastore to in-memory. Fine for a lab cluster; in production leave this enabled and ensure your cluster has PersistentVolume support.
+*   `kubeProxyReplacement=true` — Cilium installs its eBPF-based replacement for kube-proxy. Mandatory whenever the kind config sets `kubeProxyMode: none`.
+
+*   `k8sServiceHost` / `k8sServicePort` — direct API server address used during bootstrap, before Cilium can route the Service ClusterIP. On EKS/GKE/AKS you don't need this because kube-proxy is still present during install.
+
+*   `authentication.enabled=true` — required alongside `authentication.mutual.spire.enabled=true`. The chart's `validate.yaml` rejects the install with `SPIRE integration requires .Values.authentication.enabled=true and .Values.authentication.mutual.spire.enabled=true` if you set only the mutual flag.
+
+*   `dataStorage.enabled=false` — switches the SPIRE server from a PVC-backed datastore to in-memory. Fine for a lab cluster; in production leave this enabled and ensure your cluster has PersistentVolume support.
+
 
 Notice there's no `--wait` flag here. On a fresh cluster `--wait` will appear to fail with `context deadline exceeded` because the install is racey by design: the SPIRE server has to schedule on a `NotReady` node thanks to its tolerations, then Cilium agents come up using SPIRE, then nodes flip to `Ready`. Let the install return immediately and watch the pods come up over the next ~2 minutes:
 
@@ -156,9 +177,11 @@ SPIFFE ID         : spiffe://spiffe.cilium/spire/agent/k8s_psat/default/<node-ui
 
 Three agents, one per node, all attested via Kubernetes PSAT. The SPIRE server trusts every node and will issue SVIDs to workloads running on them.
 
+At this point the identity platform is fully in place — but nothing is using it yet. Demo 1 built the machinery that *issues* cryptographic identities; Demo 2 puts that machinery to work, turning those SVIDs into an enforced mutual-TLS policy between two real services. Keep the cluster from Demo 1 running — Demo 2 builds directly on it.
+
 ## Demo 2 — Enforce Mutual TLS with a CiliumNetworkPolicy
 
-Now you'll deploy two services, enforce mutual authentication between them with a `CiliumNetworkPolicy`, verify that authenticated traffic flows, and confirm that unauthenticated connections are blocked.
+Picking up in the same cluster from Demo 1, you'll deploy two services, enforce mutual authentication between them with a `CiliumNetworkPolicy`, verify that authenticated traffic flows, and confirm that unauthenticated connections are blocked. Every request here is authenticated with the SVIDs that the SPIRE server you just verified hands out — the two demos are one continuous walkthrough, not standalone exercises.
 
 ### Step 1: Deploy a client and server
 
@@ -288,10 +311,12 @@ curl -L --remote-name-all \
 sudo tar -xzf hubble-linux-amd64.tar.gz -C /usr/local/bin
 ```
 
-Enable Hubble in the cluster, port-forward in the background, then watch flows:
+Enable Hubble in the cluster, then watch flows. `cilium hubble enable` deploys Hubble Relay *and* restarts the Cilium agents to switch on the Hubble server inside them — so wait for it to settle before port-forwarding. Skip the wait and the port-forward connects before Relay is listening, then dies with `connection reset by peer` / `rpc error … EOF`:
 
 ```bash
 cilium hubble enable
+cilium status --wait          # wait for "Hubble Relay: OK" before continuing
+
 cilium hubble port-forward &
 
 # Watch flows for the echo-server (Ctrl-C to stop)
@@ -307,12 +332,43 @@ kubectl exec $CLIENT -- curl -s http://echo-server/
 In the Hubble output you'll see:
 
 ```plaintext
-TIMESTAMP   SOURCE                    DESTINATION              TYPE         VERDICT   REASON
-10:23:41    default/echo-client       default/echo-server      L3/L4        ALLOWED   policy-verdict
-10:23:41    default/echo-client       default/echo-server      HTTP         FORWARDED
+
+ℹ️  Hubble Relay is available at 127.0.0.1:4245
+Jul  7 12:44:42.380: default/echo-client-86d446b8f-9bn5v:47500 (ID:2822) -> default/echo-server-7467b4b54d-5tvkz:80 (ID:30854) policy-verdict:none TRAFFIC_DIRECTION_UNKNOWN ALLOWED (TCP Flags: SYN)
+Jul  7 12:44:42.380: default/echo-client-86d446b8f-9bn5v:47500 (ID:2822) -> default/echo-server-7467b4b54d-5tvkz:80 (ID:30854) to-endpoint FORWARDED (TCP Flags: SYN)
+Jul  7 12:44:42.381: default/echo-client-86d446b8f-9bn5v:47500 (ID:2822) <- default/echo-server-7467b4b54d-5tvkz:80 (ID:30854) to-endpoint FORWARDED (TCP Flags: SYN, ACK)
 ```
 
 The `ALLOWED` verdict with the `policy-verdict` reason confirms the CiliumNetworkPolicy matched and authentication was verified. No sidecar involved — this happened in the Cilium agents.
+
+**Prefer a graphical view? Enable the Hubble UI.** Everything above is the API + terminal path (Relay on port 4245 backs the `hubble` CLI). Hubble also ships a web dashboard with a live service map — but it's a separate component that `cilium hubble enable` does *not* start by default:
+
+```bash
+# Add the UI (re-runs enable, keeps Relay, adds the hubble-ui deployment)
+cilium hubble enable --ui
+
+# Wait for it to be Ready before opening — same race as Relay. Skip this and
+# `cilium hubble ui` fails with "connection refused" on port 8081, because the
+# UI's frontend container isn't listening yet.
+kubectl -n kube-system rollout status deployment/hubble-ui --timeout=90s
+
+# Port-forwards hubble-ui and opens http://localhost:12000 in your browser
+cilium hubble ui
+```
+
+Select the **`default`** namespace from the dropdown — that's where the demo pods and the policy live. The map is *live*: it renders edges from flows as they happen, so an idle namespace looks empty. Trigger a request to light it up:
+
+```bash
+kubectl exec $CLIENT -- curl -s http://echo-server/
+```
+
+You'll see a forwarded edge `echo-client → echo-server`; click it (or open the flow table at the bottom) to read the `policy-verdict: ALLOWED`. Leave the UI open through Step 6 — when you run the unauthorized-client test there, its connection shows up as a red *dropped* edge, the visual counterpart to the `curl` timeout.
+
+![Hubble UI — live service map for the `default` namespace, with forwarded and dropped flows](images/hubble-ui.png)
+
+The UI has three parts. The **service map** at the top draws each workload identity as a box and each observed connection as an edge colored by verdict: `echo-client → echo-server:80` is a solid green (forwarded) edge, while the box labelled `default` — that's the `unauthorized` pod, which carries only the namespace identity because it has no `app` label, so Hubble names it after that — reaches `echo-server` over a red dashed (dropped) line, and the 🔒 lock on `echo-server`'s `→ 80 TCP` port marks that endpoint as mutually authenticated by the policy. The **flow table** underneath logs one row per flow — source identity, destination identity, destination port, L7 info, `Verdict`, and timestamp — so you can read both outcomes side by side, with `echo-client → echo-server` rows marked **forwarded** and `default → echo-server` rows marked **dropped**: the same allow/deny split as the CLI, one line per packet. The **top bar** holds the namespace selector, a flow filter, the `Any verdict` / `Visual` toggle, and a live `flows/s` rate alongside the count of reporting nodes (`3/3`).
+
+> Save the screenshot as `images/hubble-ui.png` next to this README for the image above to render.
 
 ### Step 6: Verify that a pod without the matching label is blocked
 
@@ -334,7 +390,8 @@ spec:
 
 ```bash
 kubectl apply -f unauthorized-client.yaml
-kubectl exec unauthorized -- curl -s --max-time 5 http://echo-server/
+kubectl wait --for=condition=Ready pod/unauthorized --timeout=60s
+kubectl exec unauthorized -- curl -sS --max-time 5 http://echo-server/
 ```
 
 ```plaintext
@@ -342,6 +399,8 @@ curl: (28) Connection timed out after 5000 milliseconds
 ```
 
 The connection times out. The `CiliumNetworkPolicy` only permits ingress from pods with `app: echo-client`. A pod without that label gets no SVID match and no policy match — Cilium drops the traffic silently.
+
+> **Two gotchas here.** Run `kubectl wait` before exec — exec too soon after `apply` and you get `container not found ("client")` because the pod's container hasn't started yet. And use `curl -sS`, not plain `-s`: with only `-s`, curl swallows the error text and you just see `command terminated with exit code 28`. That's the same result — 28 *is* curl's timeout code — but the `-S` restores the readable message. The fact that it **times out** (rather than "connection refused") is the signature of a policy *drop*: the packets are silently blackholed, not actively rejected. A refusal would return instantly with a different error.
 
 ### Step 7: Check the workload entries in SPIRE
 
@@ -354,174 +413,6 @@ kubectl exec -n cilium-spire spire-server-0 -c spire-server -- \
 ```
 
 Each entry maps a Cilium security identity to a SPIFFE ID. The Cilium operator manages this registry automatically — you never need to register workloads manually when using Cilium's built-in integration.
-
-## Cloud Workload Identity
-
-The SPIFFE/SPIRE model solves workload identity inside a Kubernetes cluster. AWS, GCP, and Azure have their own workload identity systems for giving pods access to cloud provider APIs — IAM roles, service accounts, managed identities. These cloud systems use OIDC federation under the hood, making them conceptually related to SPIFFE even though they operate at a different layer.
-
-### AWS IRSA
-
-IRSA — IAM Roles for Service Accounts — lets a Kubernetes service account assume an AWS IAM role without storing AWS credentials anywhere. The cluster acts as an OIDC provider. A pod's projected service account token is exchanged for temporary AWS credentials via AWS STS.
-
-```yaml
-# Annotate the Kubernetes service account
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: s3-reader
-  namespace: production
-  annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::123456789:role/s3-reader-role
-```
-
-The trust policy on the IAM role specifies which Kubernetes service account can assume it:
-
-```json
-{
-  "Effect": "Allow",
-  "Principal": {
-    "Federated": "arn:aws:iam::123456789:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/EXAMPLED539D4633E53DE1B71EXAMPLE"
-  },
-  "Action": "sts:AssumeRoleWithWebIdentity",
-  "Condition": {
-    "StringEquals": {
-      "oidc.eks.us-east-1.amazonaws.com/id/EXAMPLED539D4633E53DE1B71EXAMPLE:sub": "system:serviceaccount:production:s3-reader"
-    }
-  }
-}
-```
-
-### GKE Workload Identity
-
-GKE Workload Identity binds a Kubernetes service account to a Google Cloud service account. The pod receives a projected token that it can exchange for a GCP access token, giving it access to GCP APIs without storing a service account key anywhere.
-
-```bash
-# Bind the Kubernetes SA to the Google SA
-gcloud iam service-accounts add-iam-policy-binding \
-  my-app@my-project.iam.gserviceaccount.com \
-  --role roles/iam.workloadIdentityUser \
-  --member "serviceAccount:my-project.svc.id.goog[production/my-app]"
-
-# Annotate the Kubernetes SA
-kubectl annotate serviceaccount my-app \
-  --namespace production \
-  iam.gke.io/gcp-service-account=my-app@my-project.iam.gserviceaccount.com
-```
-
-### Azure Workload Identity
-
-Azure Workload Identity uses OIDC federation between AKS and Azure AD. The pod gets a projected token that is exchanged for an Azure access token:
-
-```bash
-# Create a federated identity credential linking the K8s SA to the managed identity
-az identity federated-credential create \
-  --name my-app-federated \
-  --identity-name my-managed-identity \
-  --resource-group my-rg \
-  --issuer "${AKS_OIDC_ISSUER}" \
-  --subject "system:serviceaccount:production:my-app"
-
-# Annotate the Kubernetes SA
-kubectl annotate serviceaccount my-app \
-  --namespace production \
-  azure.workload.identity/client-id="${MANAGED_IDENTITY_CLIENT_ID}"
-```
-
-All three cloud workload identity systems follow the same pattern: a Kubernetes service account is associated with a cloud IAM identity, and the pod receives a short-lived projected token that the cloud provider accepts as proof of that association. The OIDC standard is the common thread. Understanding how SPIFFE SVIDs work — short-lived, cryptographically signed, audience-scoped — makes these cloud patterns immediately readable.
-
-## Optional — Run This on EKS Instead of kind
-
-The kind walkthrough above is the fastest way to see the demos work, but Cilium is a production CNI used at scale on EKS (Datadog, Adobe, and many others run it there). Three things change when you move from kind to EKS:
-
-1. **You don't create the cluster with a config file.** You provision EKS via `eksctl` / Terraform / the AWS console, then reconfigure it for Cilium afterward.
-2. **You have to remove the AWS VPC CNI and kube-proxy.** EKS ships with both by default. Cilium replaces both, so leaving them installed causes IP-allocation fights and double-routing.
-3. **Different Cilium install flags.** EKS-specific networking (ENI mode for native AWS IP allocation, native routing instead of vxlan, plus the EKS API server address) replaces the kind-only `k8sServiceHost` / `k8sServicePort` block.
-
-**Cost note:** EKS control plane is ~$0.10/hour (~$73/month if left running) plus EC2 worker nodes plus NAT gateway plus EBS for SPIRE storage. Budget ~$0.50–1.00 for a one-hour verification session. **Delete the cluster** when you're done.
-
-### Provision EKS with the AWS VPC CNI disabled at the source
-
-The cleanest path is to tell `eksctl` not to install the VPC CNI in the first place:
-
-```yaml
-# eks-cilium.yaml
-apiVersion: eksctl.io/v1alpha5
-kind: ClusterConfig
-metadata:
-  name: cilium-mtls
-  region: us-east-1
-  version: "1.31"
-nodeGroups:
-  - name: workers
-    instanceType: t3.medium
-    desiredCapacity: 2
-addons:
-  - name: coredns
-  - name: kube-proxy            # We'll delete this after creation
-# Critically: do NOT include 'vpc-cni' here.
-```
-
-```bash
-eksctl create cluster -f eks-cilium.yaml
-```
-
-(If you've already created the cluster with the VPC CNI installed, delete it with `kubectl -n kube-system delete daemonset aws-node` after the cluster is up.)
-
-Delete `kube-proxy` so Cilium can replace it:
-
-```bash
-kubectl -n kube-system delete daemonset kube-proxy
-```
-
-### Install Cilium with EKS-specific flags
-
-EKS gives you the API server hostname via your kubeconfig — extract it with `kubectl`:
-
-```bash
-API_SERVER_HOST=$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}' \
-  | sed -E 's|https://([^:]+).*|\1|')
-echo "API_SERVER_HOST=$API_SERVER_HOST"
-
-helm upgrade cilium cilium/cilium \
-  --install \
-  --namespace kube-system \
-  --set kubeProxyReplacement=true \
-  --set k8sServiceHost=${API_SERVER_HOST} \
-  --set k8sServicePort=443 \
-  --set eni.enabled=true \
-  --set ipam.mode=eni \
-  --set egressMasqueradeInterfaces=eth0 \
-  --set routingMode=native \
-  --set authentication.enabled=true \
-  --set authentication.mutual.spire.enabled=true \
-  --set authentication.mutual.spire.install.enabled=true
-```
-
-What's different from the kind install:
-
-- `eni.enabled=true` + `ipam.mode=eni` — Cilium uses AWS ENI secondary IPs for pod addresses (the native EKS networking model). Without this, pods can't reach the internet via the VPC.
-- `egressMasqueradeInterfaces=eth0` — SNATs pod-originated traffic so it goes out via the node's primary interface.
-- `routingMode=native` — uses AWS VPC routing instead of vxlan tunneling. Faster, but requires the VPC CNI to be gone first.
-- `k8sServicePort=443` — EKS uses 443, not 6443 like kind.
-- **No `dataStorage.enabled=false`** — on EKS you want the default PVC-backed SPIRE storage (EKS comes with EBS CSI by default).
-
-Cycle the existing workloads so they get re-IP'd by Cilium (the VPC CNI assigned their addresses before Cilium took over):
-
-```bash
-kubectl rollout restart deploy -n kube-system
-```
-
-After ~3 minutes, Cilium reports `OK` and SPIRE has attested the workers — both `cilium status` and the SPIRE `agent list` checks from Demo 1 Step 4 work identically.
-
-### Clean up
-
-```bash
-helm uninstall cilium -n kube-system
-kubectl delete namespace cilium-spire
-eksctl delete cluster --name cilium-mtls --region us-east-1
-```
-
-The `eksctl delete cluster` step is the cost-sensitive one. Run it.
 
 ## Cleanup (kind)
 
